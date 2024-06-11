@@ -3,22 +3,27 @@ import { Link } from "react-router-dom";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { FaPencil } from "react-icons/fa6";
 import api from "../services/api";
+import Project from "../interfaces/project";
 
 export default function Projects() {
-  const [projects, setProjects] = useState(async () => {
+  const [projects, setProjects] = useState<Project[]>(async () => {
     try {
-      return await api.get("/projects");
+      const { data: projects } = await api.get("/projects");
+
+      return projects;
     } catch (error) {
       console.log(error);
       return [];
     }
   });
-  const [deleteConfirmation, setDeleteConfirmation] = useState();
+  const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(
+    null
+  );
 
-  function deleteProject(projectId) {
+  function deleteProject(projectId: string) {
     api
       .delete(`/projects/${projectId}`)
-      .then(
+      .then(() =>
         setProjects((prevProjects) =>
           prevProjects.filter((project) => project.id != projectId)
         )
@@ -46,7 +51,7 @@ export default function Projects() {
 
       <div className="flex flex-wrap items-start gap-5">
         {projects.length > 0 ? (
-          projects.map((project) => {
+          projects.map((project: Project) => {
             return (
               <div
                 className="w-[300px] p-3 max-md:mx-auto border-[1px] border-zinc-400 rounded-md"

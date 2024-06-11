@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import Project from "../interfaces/project";
 
 export default function NewProject() {
   const navigate = useNavigate();
-  const [projectData, setProjectData] = useState();
+  const [projectData, setProjectData] = useState<Project>({} as Project);
 
-  function createProject(event) {
+  function createProject(event: FormEvent) {
     event.preventDefault();
 
     try {
@@ -61,7 +62,7 @@ export default function NewProject() {
             onChange={(event) => {
               setProjectData((projectData) => ({
                 ...projectData,
-                budget: event.target.value,
+                budget: Number(event.target.value),
               }));
             }}
           />

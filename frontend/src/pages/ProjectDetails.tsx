@@ -1,18 +1,26 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaRegTrashAlt } from "react-icons/fa";
 import api from "../services/api";
+import Project from "../interfaces/project";
+import Service from "../interfaces/service";
 
 export default function ProjectDetails() {
   const projectId = useParams().id;
-  const [project, setProject] = useState(() => {
-    return api.get(`/projects/${projectId}`);
+  const [project, setProject] = useState<Project>(async () => {
+    const { data: project } = await api.get(`/project/${projectId}`);
+
+    return project;
   });
-  const [editProjectData, setEditProjectData] = useState(project);
-  const [serviceData, setServiceData] = useState();
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [showServiceForm, setShowServiceForm] = useState(false);
-  const [spentBudget, setSpentBudget] = useState(0);
+  const [editProjectData, setEditProjectData] = useState<Project>(project);
+  const [serviceData, setServiceData] = useState<Service>({
+    id: "901783109cckjnsacas",
+    name: "",
+    cost: 1,
+  });
+  const [showEditForm, setShowEditForm] = useState<boolean>(false);
+  const [showServiceForm, setShowServiceForm] = useState<boolean>(false);
+  const [spentBudget, setSpentBudget] = useState<number>(0);
 
   useEffect(() => {
     let newSpentBudget = 0;
@@ -24,7 +32,7 @@ export default function ProjectDetails() {
     setSpentBudget(newSpentBudget);
   }, [project.services]);
 
-  function editProject(event) {
+  function editProject(event: FormEvent) {
     event.preventDefault();
     if (project === editProjectData) return;
 
@@ -34,7 +42,7 @@ export default function ProjectDetails() {
     });
   }
 
-  function addService(event) {
+  function addService(event: FormEvent) {
     event.preventDefault();
 
     api.post(`/services/new`, serviceData).then((response) => {
@@ -45,17 +53,13 @@ export default function ProjectDetails() {
     });
   }
 
-  function deleteService(serviceId) {
-    api
-      .delete(`/services/delete/${serviceId}`, project)
-      .then(
-        setProject((project) => ({
-          ...project,
-          services: project.services.filter(
-            (service) => service.id != serviceId
-          ),
-        }))
-      );
+  function deleteService(serviceId: string) {
+    api.delete(`/services/delete/${serviceId}`).then(() =>
+      setProject((project) => ({
+        ...project,
+        services: project.services.filter((service) => service.id != serviceId),
+      }))
+    );
   }
 
   return (
@@ -114,7 +118,7 @@ export default function ProjectDetails() {
                 onChange={(event) => {
                   setEditProjectData((editProjectData) => ({
                     ...editProjectData,
-                    budget: event.target.value,
+                    budget: Number(event.target.value),
                   }));
                 }}
               />
@@ -193,12 +197,12 @@ export default function ProjectDetails() {
                 required
                 placeholder="Insira o nome do serviço"
                 className="w-full p-2 mt-2"
-                onChange={(event) =>
+                onChange={(event) => {
                   setServiceData((serviceData) => ({
                     ...serviceData,
                     name: event.target.value,
-                  }))
-                }
+                  }));
+                }}
               />
             </div>
 

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: costs_db
+    image: postgres:alpine
+    ports:
+      - 5432:5432
+    restart: always
+    environment:
+      POSTGRES_DB: costs
+      POSTGRES_USER: costs
+      POSTGRES_PASSWORD: costs

@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "src/server.ts",
   "scripts": {
-    "dev": "ts-node-dev src/server.ts"
+    "dev": "ts-node-dev src/server.ts",
+    "build": "tsc && npx prisma migrate dev",
+    "start": "npx prisma generate && npx prisma migrate dev && node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,12 +14,13 @@
   "dependencies": {
     "@fastify/cors": "^8.0.0",
     "@prisma/client": "^5.15.0",
-    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
     "fastify": "^4.27.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
+    "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.2",
     "prisma": "^5.15.0",

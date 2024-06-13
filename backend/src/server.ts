@@ -1,21 +1,25 @@
 import fastify from "fastify";
 import cors from "@fastify/cors";
+import usersRoutes from "./routes/users-routes";
+import projectsRoutes from "./routes/projects-routes";
 
-const app = fastify();
+const server = fastify();
 
-app.register(cors, {
-  origin: process.env.FRONTEND_URL ?? [
-    "http://localhost:4173",
-    "http://localhost:5173",
-  ],
+server.register(cors, {
+  origin: process.env.FRONTEND_URL ?? "*",
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+server.register(usersRoutes, { prefix: "/users" });
+server.register(projectsRoutes, { prefix: "/projects" });
 
 const port = 3000;
-app.listen({ port }, (error) => {
-  if (error) return console.error(error);
+server.listen({ port }, (error: any) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+
   console.log(`Server running on port ${port}`);
 });
+
+export default server;

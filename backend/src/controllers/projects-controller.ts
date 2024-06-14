@@ -78,15 +78,15 @@ export async function update(
 }
 
 export async function remove(
-  request: FastifyRequest<{ Body: RequestBody }>,
+  request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ) {
   try {
-    removeProjectValidation.parse(request.body);
+    removeProjectValidation.parse(request.params);
 
     const { userId } = request;
     await removeProject({
-      id: request.body.id,
+      id: request.params.id,
       userId,
     });
 

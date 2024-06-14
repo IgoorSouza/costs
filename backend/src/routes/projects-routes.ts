@@ -19,7 +19,7 @@ export default async function projectsRoutes(server: FastifyInstance) {
   server.get("/", get);
   server.post("/create", create);
   server.put("/update", update);
-  server.delete("/remove", remove);
+  server.delete("/remove/:id", remove);
 }
 
 function checkAuthentication(

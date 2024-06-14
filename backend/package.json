@@ -4,8 +4,8 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "ts-node-dev src/server.ts",
-    "build": "tsc && npx prisma migrate dev",
-    "start": "npx prisma generate && npx prisma migrate dev && node dist/server.js"
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",

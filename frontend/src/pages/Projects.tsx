@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { FaPencil } from "react-icons/fa6";
@@ -6,28 +6,37 @@ import api from "../services/api";
 import Project from "../interfaces/project";
 
 export default function Projects() {
-  const [projects, setProjects] = useState<Project[]>(async () => {
-    try {
-      const { data: projects } = await api.get("/projects");
-
-      return projects;
-    } catch (error) {
-      console.log(error);
-      return [];
-    }
-  });
+  const [projects, setProjects] = useState<Project[]>([] as Project[]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(
     null
   );
 
+  useEffect(() => {
+    async function getProjects() {
+      await api.get("/projects").then((response) => {
+        setProjects(response.data);
+      });
+    }
+
+    try {
+      getProjects();
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
   function deleteProject(projectId: string) {
-    api
-      .delete(`/projects/${projectId}`)
-      .then(() =>
-        setProjects((prevProjects) =>
-          prevProjects.filter((project) => project.id != projectId)
-        )
-      );
+    try {
+      api
+        .delete(`/projects/remove/${projectId}`)
+        .then(() =>
+          setProjects((prevProjects) =>
+            prevProjects.filter((project) => project.id != projectId)
+          )
+        );
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   return (
@@ -36,22 +45,20 @@ export default function Projects() {
         <h1 className="text-2xl font-bold md:text-4xl">Meus Projetos</h1>
 
         <Link
-          to="/new"
+          to="new"
           className="px-3 py-2 text-[18px] text-white bg-black hover:text-amber-400"
         >
           Criar projeto
         </Link>
       </div>
 
-      {projects.length === 0 && (
+      {projects.length === 0 ? (
         <div className="mx-auto">
           <h2 className="text-xl md:text-2xl">Nenhum projeto registrado.</h2>
         </div>
-      )}
-
-      <div className="flex flex-wrap items-start gap-5">
-        {projects.length > 0 ? (
-          projects.map((project: Project) => {
+      ) : (
+        <div className="flex flex-wrap items-start gap-5">
+          {projects.map((project: Project) => {
             return (
               <div
                 className="w-[300px] p-3 max-md:mx-auto border-[1px] border-zinc-400 rounded-md"
@@ -82,7 +89,7 @@ export default function Projects() {
                 </p>
 
                 <div className="w-56 flex justify-around">
-                  <Link to={`/project/${project.id}`}>
+                  <Link to={`/projects/${project.id}`}>
                     <button className="flex items-center py-2 px-4 border-[1px] border-black hover:bg-[#e4e4e4]">
                       <FaPencil className="mr-2" /> Editar
                     </button>
@@ -119,13 +126,9 @@ export default function Projects() {
                 )}
               </div>
             );
-          })
-        ) : (
-          <p className="w-full text-xl text-center">
-            Não há projetos registrados.
-          </p>
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }

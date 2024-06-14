@@ -11,7 +11,9 @@ export default function NewProject() {
     event.preventDefault();
 
     try {
-      api.post("/projects", projectData).then(() => navigate("/projects"));
+      api
+        .post("/projects/create", projectData)
+        .then(() => navigate("/projects"));
     } catch (error) {
       console.error(error);
     }

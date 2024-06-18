@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import jwt, { Secret } from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { createUser, findUser } from "../repository/users-repository";
+import { createUser, getUser } from "../repositories/users-repository";
 import { registerValidation, loginValidation } from "../validation/users";
 
 interface RequestBody {
@@ -9,8 +9,10 @@ interface RequestBody {
   password: string;
 }
 
-interface RegisterRequestBody extends RequestBody {
+interface RegisterRequestBody {
   name: string;
+  email: string;
+  password: string;
 }
 
 const secret: Secret = process.env.JWT_SECRET ?? Math.random().toString(36);
@@ -21,20 +23,19 @@ export async function register(
 ) {
   try {
     const userData = request.body;
-
     registerValidation.parse(userData);
 
     userData.password = await bcrypt.hash(userData.password, 8);
 
-    const user = await createUser(userData);
+    await createUser(userData);
 
-    reply.status(201).send(user);
+    reply.status(201).send("User successfully created.");
   } catch (error: any) {
     if (error.code === "P2002") {
       return reply.status(409).send("User already exists.");
     }
 
-    reply.status(400).send(error);
+    reply.status(500).send(error);
   }
 }
 
@@ -46,8 +47,7 @@ export async function login(
     const userData = request.body;
     loginValidation.parse(userData);
 
-    const user = await findUser(userData.email);
-
+    const user = await getUser(userData.email);
     if (!user) throw 404;
 
     const passwordMatches = await bcrypt.compare(
@@ -69,6 +69,6 @@ export async function login(
       return reply.status(401).send("Wrong password.");
     }
 
-    reply.status(400).send(error);
+    reply.status(500).send(error);
   }
 }

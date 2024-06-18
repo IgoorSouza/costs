@@ -15,7 +15,7 @@ server.register(projectsRoutes, { prefix: "/projects" });
 server.register(servicesRoutes, { prefix: "/services" });
 
 const port = 3000;
-server.listen({ port }, (error: any) => {
+server.listen({ port, host: "0.0.0.0" }, (error: any) => {
   if (error) {
     return console.error(error);
   }

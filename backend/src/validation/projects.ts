@@ -12,7 +12,3 @@ export const updateProjectValidation = z.object({
   budget: z.number().nonnegative().optional(),
   category: z.string().optional(),
 });
-
-export const removeProjectValidation = z.object({
-  id: z.string().uuid(),
-});

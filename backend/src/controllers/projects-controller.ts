@@ -1,13 +1,13 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   createProject,
-  getUserProjects,
+  getAllProjects,
+  getProject,
   removeProject,
   updateProject,
-} from "../repository/projects-repository";
+} from "../repositories/projects-repository";
 import {
   createProjectValidation,
-  removeProjectValidation,
   updateProjectValidation,
 } from "../validation/projects";
 
@@ -22,17 +22,6 @@ interface CreateProjectRequestBody {
   name: string;
   budget: number;
   category: string;
-}
-
-export async function get(request: FastifyRequest, reply: FastifyReply) {
-  try {
-    const { userId } = request;
-    const projects = await getUserProjects(userId);
-
-    reply.status(200).send(projects);
-  } catch (error: any) {
-    reply.status(400).send(error);
-  }
 }
 
 export async function create(
@@ -50,7 +39,39 @@ export async function create(
 
     reply.status(201).send(project);
   } catch (error: any) {
-    reply.status(400).send(error);
+    reply.status(500).send(error);
+  }
+}
+
+export async function getAll(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { userId } = request;
+    const projects = await getAllProjects(userId);
+
+    reply.status(200).send(projects);
+  } catch (error: any) {
+    reply.status(500).send(error);
+  }
+}
+
+export async function getOne(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) {
+  try {
+    const { id } = request.params;
+    const { userId } = request;
+    const project = await getProject({ id, userId });
+
+    if (!project) throw 404;
+
+    reply.status(200).send(project);
+  } catch (error: any) {
+    if (error === 404) {
+      return reply.status(404).send("Project not found.");
+    }
+
+    reply.status(500).send(error);
   }
 }
 
@@ -62,6 +83,7 @@ export async function update(
     updateProjectValidation.parse(request.body);
 
     const { userId } = request;
+
     const project = await updateProject({
       ...request.body,
       userId,
@@ -69,11 +91,7 @@ export async function update(
 
     reply.status(200).send(project);
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return reply.status(404).send("Project not found.");
-    }
-
-    reply.status(400).send(error);
+    reply.status(500).send(error);
   }
 }
 
@@ -82,20 +100,16 @@ export async function remove(
   reply: FastifyReply
 ) {
   try {
-    removeProjectValidation.parse(request.params);
-
+    const { id } = request.params;
     const { userId } = request;
+
     await removeProject({
-      id: request.params.id,
+      id,
       userId,
     });
 
     reply.status(200).send("Project successfully removed.");
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return reply.status(404).send("Project not found.");
-    }
-
-    reply.status(400).send(error);
+    reply.status(500).send(error);
   }
 }

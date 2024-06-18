@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -8,5 +8,27 @@ services:
     ports:
       - 5432:5432
     restart: always
-    env_file:
-      - ./postgres/.env
+    environment:
+      - POSTGRES_DB=costs
+      - POSTGRES_USER=costs
+      - POSTGRES_PASSWORD=costs
+
+  backend:
+    container_name: costs_backend
+    build:
+      context: ./backend
+    ports:
+      - 3000:3000
+    depends_on:
+      - postgres
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://costs:costs@costs_postgres:5432/costs?schema=public
+      - JWT_SECRET=098f0asc8809s8ac56csa46cs542csa90c8sa90cs7
+
+  frontend:
+    container_name: costs_frontend
+    build:
+      context: ./frontend
+    ports:
+     - 4173:4173

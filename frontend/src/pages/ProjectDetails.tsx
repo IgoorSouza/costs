@@ -1,64 +1,145 @@
-import { FormEvent, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { FaRegTrashAlt } from "react-icons/fa";
+import { useState, useEffect, FormEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../services/api";
-import Project from "../interfaces/project";
-import Service from "../interfaces/service";
+import ServiceCard from "../components/ServiceCard";
+import { Project, Service } from "../utils/interfaces";
 
 export default function ProjectDetails() {
-  const projectId = useParams().id;
-  const [project, setProject] = useState<Project>(async () => {
-    const { data: project } = await api.get(`/project/${projectId}`);
-
-    return project;
-  });
-  const [editProjectData, setEditProjectData] = useState<Project>(project);
-  const [serviceData, setServiceData] = useState<Service>({
-    id: "901783109cckjnsacas",
-    name: "",
-    cost: 1,
-  });
+  const [project, setProject] = useState<Project>({} as Project);
+  const [editProjectData, setEditProjectData] = useState<Project>(
+    {} as Project
+  );
+  const [services, setServices] = useState([] as Service[]);
+  const [serviceData, setServiceData] = useState<Service>({} as Service);
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [showServiceForm, setShowServiceForm] = useState<boolean>(false);
   const [spentBudget, setSpentBudget] = useState<number>(0);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function getProject() {
+      try {
+        const { data: project } = await api.get(`/projects/${projectId}`);
+
+        setProject(project);
+        setEditProjectData(project);
+        setServices(project.services);
+        setInitialLoading(false);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          toast.error("Projeto não encontrado.");
+          return navigate("/projects");
+        }
+
+        toast.error(
+          "Ocorreu um erro ao buscar os dados do projeto. Por favor, reinicie a página e tente novamente."
+        );
+      }
+    }
+
+    getProject();
+  }, [projectId, navigate]);
 
   useEffect(() => {
     let newSpentBudget = 0;
 
-    project.services?.forEach((service) => {
+    services.forEach((service) => {
       newSpentBudget += service.cost;
     });
 
     setSpentBudget(newSpentBudget);
-  }, [project.services]);
+  }, [services]);
 
-  function editProject(event: FormEvent) {
+  async function editProject(event: FormEvent) {
     event.preventDefault();
-    if (project === editProjectData) return;
 
-    api.put(`/project/${project.id}`, editProjectData).then((response) => {
-      setProject(response.data);
+    if (
+      editProjectData.name === project.name &&
+      editProjectData.budget === project.budget &&
+      editProjectData.category === project.category
+    ) {
+      return setShowEditForm(false);
+    }
+
+    if (editProjectData.budget < spentBudget) {
+      return toast.error(
+        "O novo orçamento é inferior ao orçamento gasto pelos serviços registrados no momento."
+      );
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: project } = await api.put("/projects/update", {
+        id: editProjectData.id,
+        name: editProjectData.name,
+        budget: editProjectData.budget,
+        category: editProjectData.category,
+      });
+
+      setProject(project);
+      setEditProjectData(project);
       setShowEditForm(false);
-    });
+      setLoading(false);
+      toast.success("Projeto editado com sucesso!");
+    } catch (error) {
+      setLoading(false);
+      toast.error(
+        "Ocorreu um erro ao atualizar os dados do projeto. Por favor, reinicie a página e tente novamente."
+      );
+    }
   }
 
-  function addService(event: FormEvent) {
+  async function addService(event: FormEvent) {
     event.preventDefault();
 
-    api.post(`/services/new`, serviceData).then((response) => {
-      setProject((prevProject) => ({
-        ...prevProject,
-        services: [...prevProject.services, response.data],
-      }));
-    });
+    if (project.budget - spentBudget < serviceData.cost) {
+      return toast.error("Orçamento insuficiente.");
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: service } = await api.post("/services/create", {
+        ...serviceData,
+        projectId,
+      });
+
+      setServices((prevServices) => [...prevServices, service]);
+      setShowServiceForm(false);
+      setLoading(false);
+      toast.success("Serviço adicionado com sucesso!");
+    } catch (error) {
+      toast.error(
+        "Ocorreu um erro ao adicionar o serviço. Por favor, reinicie a página e tente novamente."
+      );
+    }
   }
 
-  function deleteService(serviceId: string) {
-    api.delete(`/services/delete/${serviceId}`).then(() =>
-      setProject((project) => ({
-        ...project,
-        services: project.services.filter((service) => service.id != serviceId),
-      }))
+  async function removeService(serviceId: string) {
+    try {
+      await api.delete(`/services/remove/${serviceId}`);
+
+      setServices((prevServices) =>
+        prevServices.filter((service) => service.id != serviceId)
+      );
+      toast.success("Serviço removido com sucesso.");
+    } catch (error) {
+      toast.error(
+        "Ocorreu um erro ao remover o serviço. Por favor, reinicie a página e tente novamente."
+      );
+    }
+  }
+
+  if (initialLoading) {
+    return (
+      <h1 className="mt-6 text-2xl text-center md:mt-10 md:text-3xl">
+        Carregando projeto...
+      </h1>
     );
   }
 
@@ -81,75 +162,80 @@ export default function ProjectDetails() {
           className="flex flex-col items-center text-[18px] my-5"
           onSubmit={editProject}
         >
-          <div className="w-full mb-3">
-            <label htmlFor="serviceName" className="font-bold">
-              Nome do projeto:
-            </label>
+          <label htmlFor="serviceName" className="self-start font-bold">
+            Nome do projeto:
+          </label>
+          <input
+            type="text"
+            id="serviceName"
+            required
+            disabled={loading}
+            defaultValue={project.name}
+            placeholder="Insira o novo nome do projeto"
+            className="w-full p-2 mt-2 mb-3 disabled:opacity-50 disabled:bg-white"
+            onChange={(event) => {
+              setEditProjectData((editProjectData) => ({
+                ...editProjectData,
+                name: event.target.value,
+              }));
+            }}
+          />
+
+          <label htmlFor="serviceCost" className="self-start font-bold">
+            Orçamento do projeto:
+          </label>
+          <div
+            className={`flex w-full p-2 mt-2 mb-3 bg-white ${
+              loading && "opacity-50"
+            }`}
+          >
+            {project.budget >= 0 && <span>R$</span>}
             <input
-              type="text"
-              id="serviceName"
+              type="number"
+              id="serviceCost"
               required
-              defaultValue={project.name}
-              placeholder="Insira o novo nome do projeto"
-              className="w-full p-2 mt-2"
+              min={1}
+              step={0.01}
+              disabled={loading}
+              defaultValue={project.budget}
+              placeholder="Insira o novo orçamento do projeto"
+              className="w-full ml-1 outline-none disabled:bg-white"
               onChange={(event) => {
                 setEditProjectData((editProjectData) => ({
                   ...editProjectData,
-                  name: event.target.value,
+                  budget: Number(event.target.value),
                 }));
               }}
             />
           </div>
 
-          <div className="w-full mb-3">
-            <label htmlFor="serviceCost" className="font-bold">
-              Orçamento do projeto:
-            </label>
-            <div className="flex w-full p-2 mt-2 bg-white">
-              {project.budget && <span>R$</span>}
-              <input
-                type="number"
-                id="serviceCost"
-                required
-                min={1}
-                defaultValue={project.budget}
-                placeholder="Insira o novo orçamento do projeto"
-                className="w-full ml-1 outline-none"
-                onChange={(event) => {
-                  setEditProjectData((editProjectData) => ({
-                    ...editProjectData,
-                    budget: Number(event.target.value),
-                  }));
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="w-full">
-            <label htmlFor="projectCategory" className="font-bold">
-              Selecione a categoria:
-            </label>
-            <select
-              id="projectCategory"
-              className="w-full p-2 mt-2"
-              defaultValue={project.category}
-              onChange={(event) => {
-                setEditProjectData((editProjectData) => ({
-                  ...editProjectData,
-                  category: event.target.value,
-                }));
-              }}
-            >
-              <option>Infra</option>
-              <option>Desenvolvimento</option>
-              <option>Design</option>
-              <option>Planejamento</option>
-            </select>
-          </div>
+          <label htmlFor="projectCategory" className="self-start font-bold">
+            Selecione a categoria:
+          </label>
+          <select
+            id="projectCategory"
+            className="w-full p-2 mt-2 disabled:opacity-50 disabled:bg-white"
+            disabled={loading}
+            defaultValue={project.category}
+            onChange={(event) => {
+              setEditProjectData((editProjectData) => ({
+                ...editProjectData,
+                category: event.target.value,
+              }));
+            }}
+          >
+            <option>Infraestrutura</option>
+            <option>Desenvolvimento</option>
+            <option>Design</option>
+            <option>Planejamento</option>
+          </select>
 
           <button
             type="submit"
-            className="w-1/2 py-2 mt-5 text-lg text-white bg-black hover:text-amber-400"
+            disabled={loading}
+            className={`w-1/2 py-2 mt-5 text-lg text-white bg-black disabled:opacity-50 ${
+              !loading && "hover:text-amber-400"
+            }`}
           >
             Editar
           </button>
@@ -162,7 +248,7 @@ export default function ProjectDetails() {
           </p>
           <p className="mb-1 text-lg md:text-xl">
             <span className="font-bold">Orçamento total: </span>
-            R$ {project.budget}
+            R${project.budget}
           </p>
           <p className="text-lg md:text-xl">
             <span className="font-bold">Orçamento utilizado: </span>
@@ -187,36 +273,42 @@ export default function ProjectDetails() {
             className="flex flex-col items-center mt-5 text-lg"
             onSubmit={addService}
           >
-            <div className="w-full mb-3">
-              <label htmlFor="serviceName" className="font-bold">
-                Nome do serviço:
-              </label>
-              <input
-                type="text"
-                id="serviceName"
-                required
-                placeholder="Insira o nome do serviço"
-                className="w-full p-2 mt-2"
-                onChange={(event) => {
-                  setServiceData((serviceData) => ({
-                    ...serviceData,
-                    name: event.target.value,
-                  }));
-                }}
-              />
-            </div>
+            <label htmlFor="serviceName" className="self-start font-bold">
+              Nome do serviço:
+            </label>
+            <input
+              type="text"
+              id="serviceName"
+              required
+              disabled={loading}
+              placeholder="Insira o nome do serviço"
+              className="w-full p-2 mt-2 mb-3 disabled:opacity-50 disabled:bg-white"
+              onChange={(event) => {
+                setServiceData((serviceData) => ({
+                  ...serviceData,
+                  name: event.target.value,
+                }));
+              }}
+            />
 
-            <div className="w-full mb-3">
-              <label htmlFor="serviceCost" className="font-bold">
-                Custo do serviço:
-              </label>
+            <label htmlFor="serviceCost" className="self-start font-bold">
+              Custo do serviço:
+            </label>
+            <div
+              className={`flex w-full p-2 mt-2 mb-3 bg-white ${
+                loading && "opacity-50"
+              }`}
+            >
+              {serviceData.cost >= 0 && <span>R$</span>}
               <input
                 type="number"
                 id="serviceCost"
                 required
-                placeholder="Insira o valor total"
                 min={1}
-                className="w-full p-2 mt-2"
+                step={0.01}
+                disabled={loading}
+                placeholder="Insira o custo do serviço"
+                className="w-full ml-1 outline-none disabled:bg-white"
                 onChange={(event) =>
                   setServiceData((serviceData) => ({
                     ...serviceData,
@@ -226,27 +318,32 @@ export default function ProjectDetails() {
               />
             </div>
 
-            <div className="w-full">
-              <label htmlFor="serviceDescription" className="font-bold">
-                Descrição do serviço (opcional):
-              </label>
-              <input
-                type="text"
-                id="serviceDescription"
-                placeholder="Descreva o serviço"
-                className="w-full p-2 mt-2"
-                onChange={(event) =>
-                  setServiceData((serviceData) => ({
-                    ...serviceData,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </div>
+            <label
+              htmlFor="serviceDescription"
+              className="self-start font-bold"
+            >
+              Descrição do serviço (opcional):
+            </label>
+            <input
+              type="text"
+              id="serviceDescription"
+              disabled={loading}
+              placeholder="Insira a descrição do serviço"
+              className="w-full p-2 mt-2 disabled:opacity-50 disabled:bg-white"
+              onChange={(event) =>
+                setServiceData((serviceData) => ({
+                  ...serviceData,
+                  description: event.target.value,
+                }))
+              }
+            />
 
             <button
               type="submit"
-              className="w-1/2 py-2 mt-5 text-lg text-white bg-black hover:text-amber-400"
+              disabled={loading}
+              className={`w-1/2 py-2 mt-5 text-lg text-white bg-black disabled:opacity-50 ${
+                !loading && "hover:text-amber-400"
+              }`}
             >
               Adicionar serviço
             </button>
@@ -257,33 +354,14 @@ export default function ProjectDetails() {
       <h2 className="text-[28px] font-bold mb-3">Serviços: </h2>
 
       <div className="flex flex-wrap gap-5">
-        {project.services?.length > 0 ? (
-          project.services.map((service) => {
-            return (
-              <div
-                className="flex flex-col w-[300px] p-3 rounded-md border-[1px] border-zinc-400 max-md:mx-auto"
-                key={service.id}
-              >
-                <div>
-                  <h2 className="bg-black text-amber-400 text-2xl font-bold p-2 mb-4">
-                    {service.name}
-                  </h2>
-                  <p className="mb-2 text-zinc-500">
-                    <span className="font-bold">Custo total: </span>
-                    R${service.cost}
-                  </p>
-                  <p className="mb-4 text-zinc-500">{service.description}</p>
-                </div>
-
-                <button
-                  className="self-start flex items-center py-2 px-4 mt-auto border-[1px] border-black hover:bg-[#e4e4e4]"
-                  onClick={() => deleteService(service.id)}
-                >
-                  <FaRegTrashAlt className="mr-2" /> Excluir
-                </button>
-              </div>
-            );
-          })
+        {services.length > 0 ? (
+          services.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              removeService={removeService}
+            />
+          ))
         ) : (
           <p className="text-[18px]">Não há serviços registrados.</p>
         )}

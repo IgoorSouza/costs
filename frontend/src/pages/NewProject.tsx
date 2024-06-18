@@ -1,21 +1,30 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../services/api";
-import Project from "../interfaces/project";
+import { Project } from "../utils/interfaces";
 
 export default function NewProject() {
   const navigate = useNavigate();
-  const [projectData, setProjectData] = useState<Project>({} as Project);
+  const [projectData, setProjectData] = useState<Project>({
+    category: "Infraestrutura",
+  } as Project);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  function createProject(event: FormEvent) {
+  async function createProject(event: FormEvent) {
     event.preventDefault();
+    setLoading(true);
 
     try {
-      api
-        .post("/projects/create", projectData)
-        .then(() => navigate("/projects"));
+      await api.post("/projects/create", projectData);
+
+      toast.success("Projeto criado com sucesso!");
+      navigate("/projects");
     } catch (error) {
-      console.error(error);
+      setLoading(false);
+      toast.error(
+        "Ocorreu um erro ao criar o projeto. Por favor, reinicie a página e tente novamente."
+      );
     }
   }
 
@@ -36,8 +45,9 @@ export default function NewProject() {
           type="text"
           id="projectName"
           required
+          disabled={loading}
           placeholder="Insira o nome do projeto"
-          className="p-3 mb-2 md:mb-4"
+          className="p-3 mb-2 disabled:bg-white md:mb-4"
           onChange={(event) => {
             setProjectData((projectData) => ({
               ...projectData,
@@ -53,12 +63,14 @@ export default function NewProject() {
           Orçamento do projeto
         </label>
         <div className="flex p-3 mb-2 md:mb-4 bg-white">
-          {projectData?.budget && <span>R$</span>}
+          {projectData?.budget >= 0 && <span>R$</span>}
           <input
             type="number"
-            min={1}
             id="projectBudget"
+            min={1}
+            step={0.01}
             required
+            disabled={loading}
             className="w-full ml-1 outline-none"
             placeholder="Insira o orçamento do projeto"
             onChange={(event) => {
@@ -78,6 +90,7 @@ export default function NewProject() {
         </label>
         <select
           id="projectCategory"
+          disabled={loading}
           className="p-3 mb-2 md:mb-4"
           onChange={(event) => {
             setProjectData((projectData) => ({
@@ -94,9 +107,12 @@ export default function NewProject() {
 
         <button
           type="submit"
-          className="w-1/2 p-2 mx-auto mt-2 text-lg bg-black text-white md:p-3 hover:text-amber-400"
+          disabled={loading}
+          className={`w-1/2 p-2 mx-auto mt-2 text-lg bg-black text-white disabled:opacity-50 md:p-3 ${
+            !loading && "hover:text-amber-400"
+          }`}
         >
-          Criar projeto
+          {loading ? "Criando projeto..." : "Criar projeto"}
         </button>
       </form>
     </div>

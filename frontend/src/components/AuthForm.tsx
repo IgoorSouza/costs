@@ -1,29 +1,32 @@
-import { useState, useContext, FormEvent } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useState, useContext, FormEvent, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
+import { UserData } from "../utils/interfaces";
 import show from "../assets/show.svg";
 import hide from "../assets/hide.svg";
 
-interface UserData {
-  name?: string;
-  email: string;
-  password: string;
-}
-
-export default function AuthForm() {
+export default function AuthForm({ action }: { action: string }) {
   const [userData, setUserData] = useState<UserData>({} as UserData);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const { register, login } = useContext(AuthContext);
-  const location = useLocation();
+  const [loading, setLoading] = useState<boolean>(false);
+  const { authData, register, login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  function handleSubmit(event: FormEvent) {
+  useEffect(() => {
+    if (authData) navigate("/projects");
+  }, [authData, navigate]);
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    setLoading(true);
 
-    if (location.pathname === "/register") {
-      register(userData);
+    if (action === "register") {
+      await register(userData);
     } else {
-      login(userData);
+      await login(userData);
     }
+
+    setLoading(false);
   }
 
   return (
@@ -32,10 +35,10 @@ export default function AuthForm() {
       onSubmit={handleSubmit}
     >
       <h1 className="mb-3 text-3xl text-center font-bold md:text-4xl">
-        {location.pathname === "/register" ? "Criar conta" : "Entrar"}
+        {action === "register" ? "Criar conta" : "Entrar"}
       </h1>
 
-      {location.pathname === "/register" && (
+      {action === "register" && (
         <>
           <label
             htmlFor="userName"
@@ -47,8 +50,10 @@ export default function AuthForm() {
             type="text"
             id="userName"
             required
+            maxLength={40}
+            disabled={loading}
             placeholder="Insira seu nome"
-            className="mb-2 p-3"
+            className="mb-2 p-3 disabled:bg-white disabled:opacity-50"
             onChange={(event) =>
               setUserData((prevUserData) => ({
                 ...prevUserData,
@@ -66,8 +71,9 @@ export default function AuthForm() {
         type="email"
         id="userEmail"
         required
+        disabled={loading}
         placeholder="Insira seu email"
-        className="mb-2 p-3"
+        className="mb-2 p-3 disabled:bg-white disabled:opacity-50"
         onChange={(event) =>
           setUserData((prevUserData) => ({
             ...prevUserData,
@@ -82,13 +88,15 @@ export default function AuthForm() {
       >
         Senha
       </label>
-      <div className="flex bg-white">
+      <div className={`flex bg-white ${loading && "opacity-50"}`}>
         <input
           type={showPassword ? "text" : "password"}
           id="userPassword"
           required
+          minLength={6}
+          disabled={loading}
           placeholder="Insira sua senha"
-          className="w-full p-3"
+          className="w-full p-3 disabled:bg-white"
           onChange={(event) =>
             setUserData((prevUserData) => ({
               ...prevUserData,
@@ -99,26 +107,29 @@ export default function AuthForm() {
         <img
           src={showPassword ? hide : show}
           className="bg-slate-400 px-3 cursor-pointer"
-          onClick={() => setShowPassword(!showPassword)}
+          onClick={() => (loading ? () => {} : setShowPassword(!showPassword))}
         />
       </div>
 
       <button
         type="submit"
-        className="w-1/2 mt-5 mb-3 mx-auto p-2 text-lg bg-black text-white md:p-3 hover:text-amber-400"
+        disabled={loading}
+        className={`w-1/2 mt-5 mb-3 mx-auto p-2 text-lg bg-black text-white disabled:opacity-50 md:p-3 ${
+          !loading && "hover:text-amber-400"
+        }`}
       >
-        {location.pathname === "/register" ? "Criar conta" : "Entrar"}
+        {action === "register" ? "Criar conta" : "Entrar"}
       </button>
 
       <p className="text-center text-sm md:text-md">
-        {location.pathname === "/register"
+        {action === "register"
           ? "Já possui uma conta?"
           : "Ainda não possui uma conta?"}{" "}
         <Link
-          to={location.pathname === "/register" ? "/login" : "/register"}
+          to={`/${action === "register" ? "login" : "register"}`}
           className="text-blue-600 underline"
         >
-          {location.pathname === "/register" ? "Entre!" : "Se cadastre!"}
+          {action === "register" ? "Entre!" : "Se cadastre!"}
         </Link>
       </p>
     </form>

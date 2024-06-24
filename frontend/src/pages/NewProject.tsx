@@ -91,7 +91,7 @@ export default function NewProject() {
         <select
           id="projectCategory"
           disabled={loading}
-          className="p-3 mb-2 md:mb-4"
+          className="p-3 mb-2 bg-white md:mb-4"
           onChange={(event) => {
             setProjectData((projectData) => ({
               ...projectData,

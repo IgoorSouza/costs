@@ -8,7 +8,7 @@ export const AuthContext = createContext({} as AuthContextObject);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [authData, setAuthData] = useState<AuthData | null>(null);
-  const [authenticating, setAuthenticating] = useState(true);
+  const [authenticating, setAuthenticating] = useState<boolean>(true);
   const navigate = useNavigate();
 
   useEffect(() => {

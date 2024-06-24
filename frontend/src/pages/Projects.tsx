@@ -13,7 +13,6 @@ export default function Projects() {
     async function getProjects() {
       try {
         const { data: projects } = await api.get("/projects");
-
         setProjects(projects);
         setLoading(false);
       } catch (error) {
@@ -68,7 +67,7 @@ export default function Projects() {
         </div>
       ) : (
         <div className="flex flex-wrap items-start gap-5">
-          {projects.map((project) => (
+          {projects?.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}

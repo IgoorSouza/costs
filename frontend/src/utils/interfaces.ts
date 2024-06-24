@@ -15,6 +15,7 @@ export interface Project {
 
 export interface AuthContextObject {
   authData: AuthData | null;
+  authenticating: boolean;
   register: (userData: UserData) => Promise<string | undefined>;
   login: (userData: UserData) => Promise<string | undefined>;
   logout: () => void;
@@ -22,7 +23,7 @@ export interface AuthContextObject {
 
 export interface AuthData {
   name: string;
-  token: string;
+  accessToken: string;
 }
 
 export interface UserData {

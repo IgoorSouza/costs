@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import jwt, { Secret } from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { createUser, getUser } from "../repositories/users-repository";
 import { registerValidation, loginValidation } from "../validation/users";
@@ -15,7 +15,8 @@ interface RegisterRequestBody {
   password: string;
 }
 
-const secret: Secret = process.env.JWT_SECRET ?? Math.random().toString(36);
+const accessTokenSecret: Secret = process.env.ACCESS_TOKEN_SECRET || "";
+const refreshTokenSecret: Secret = process.env.REFRESH_TOKEN_SECRET || "";
 
 export async function register(
   request: FastifyRequest<{ Body: RegisterRequestBody }>,
@@ -57,9 +58,26 @@ export async function login(
 
     if (!passwordMatches) throw 401;
 
-    const token = jwt.sign(user.id, secret);
+    const refreshToken = jwt.sign(
+      { userId: user.id, name: user.name },
+      refreshTokenSecret,
+      {
+        expiresIn: "7d",
+      }
+    );
+    const accessToken = jwt.sign({ userId: user.id }, accessTokenSecret, {
+      expiresIn: "20m",
+    });
 
-    reply.status(200).send({ name: user.name, token });
+    reply
+      .status(200)
+      .setCookie("refreshToken", refreshToken, {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production" ?? false,
+        sameSite: "strict",
+      })
+      .send({ name: user.name, accessToken });
   } catch (error: any) {
     if (error === 404) {
       return reply.status(404).send("User does not exist.");
@@ -69,6 +87,46 @@ export async function login(
       return reply.status(401).send("Wrong password.");
     }
 
+    reply.status(500).send(error);
+  }
+}
+
+export async function refresh(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { refreshToken } = request.cookies;
+
+    if (!refreshToken) {
+      throw 401;
+    }
+
+    const { userId, name } = jwt.verify(
+      refreshToken,
+      refreshTokenSecret
+    ) as JwtPayload;
+
+    const accessToken = jwt.sign({ userId }, accessTokenSecret, {
+      expiresIn: "20m",
+    });
+
+    return reply.status(200).send({ name, accessToken });
+  } catch (error: any) {
+    if (error === 401) {
+      return reply.status(401).send("User is not authenticated.");
+    }
+
+    if (error.message === "jwt expired") {
+      return reply.status(401).send("Authentication expired.");
+    }
+
+    reply.status(500).send(error);
+  }
+}
+
+export async function logout(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    reply.clearCookie("refreshToken");
+    return reply.status(200).send("Successfully logged out.");
+  } catch (error: any) {
     reply.status(500).send(error);
   }
 }

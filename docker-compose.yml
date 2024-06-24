@@ -23,8 +23,9 @@ services:
       - postgres
     restart: always
     environment:
-      - DATABASE_URL=postgresql://costs:costs@costs_postgres:5432/costs?schema=public
-      - JWT_SECRET=098f0asc8809s8ac56csa46cs542csa90c8sa90cs7
+      - DATABASE_URL=postgresql://costs:costs@localhost:5432/costs?schema=public
+      - ACCESS_TOKEN_SECRET=098f0a6scvjk1ahvl435ka8809s8ac56csa46cs542csa90c8sa90cs7
+      - REFRESH_TOKEN_SECRET=7csa90c88789f6sa08fh7m6567j567a5v7as9ghag5903gfacsmnvka1m
 
   frontend:
     container_name: costs_frontend

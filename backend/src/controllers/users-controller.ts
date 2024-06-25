@@ -73,9 +73,10 @@ export async function login(
       .status(200)
       .setCookie("refreshToken", refreshToken, {
         path: "/",
+        sameSite: "none",
+        domain: process.env.RENDER_EXTERNAL_HOSTNAME ?? undefined,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production" ?? false,
-        sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 // 7 days 
       })
       .send({ name: user.name, accessToken });

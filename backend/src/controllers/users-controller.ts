@@ -76,7 +76,6 @@ export async function login(
         sameSite: "strict",
         domain: process.env.RENDER_EXTERNAL_HOSTNAME ?? undefined,
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production" ?? false,
         maxAge: 7 * 24 * 60 * 60 // 7 days 
       })
       .send({ name: user.name, accessToken });

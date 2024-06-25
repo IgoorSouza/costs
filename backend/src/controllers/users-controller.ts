@@ -74,7 +74,7 @@ export async function login(
       .setCookie("refreshToken", refreshToken, {
         path: "/",
         sameSite: "strict",
-        partitioned: true,
+        secure: true,
         domain: process.env.RENDER_EXTERNAL_HOSTNAME ?? undefined,
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 // 7 days 

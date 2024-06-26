@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { AxiosError } from "axios";
 import api from "../services/api";
 import ServiceCard from "../components/ServiceCard";
 import { Project, Service } from "../utils/interfaces";
@@ -29,10 +30,11 @@ export default function ProjectDetails() {
         setEditProjectData(project);
         setServices(project.services);
         setInitialLoading(false);
-      } catch (error: any) {
-        if (error.response?.status === 404) {
+      } catch (error: unknown) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
           toast.error("Projeto não encontrado.");
-          return navigate("/projects");
+          navigate("/projects");
+          return;
         }
 
         toast.error(
@@ -62,13 +64,15 @@ export default function ProjectDetails() {
       editProjectData.budget === project.budget &&
       editProjectData.category === project.category
     ) {
-      return setShowEditForm(false);
+      setShowEditForm(false);
+      return;
     }
 
     if (editProjectData.budget < spentBudget) {
-      return toast.error(
+      toast.error(
         "O novo orçamento é inferior ao orçamento gasto pelos serviços registrados no momento."
       );
+      return;
     }
 
     setLoading(true);
@@ -98,7 +102,8 @@ export default function ProjectDetails() {
     event.preventDefault();
 
     if (project.budget - spentBudget < serviceData.cost) {
-      return toast.error("Orçamento insuficiente.");
+      toast.error("Orçamento insuficiente.");
+      return;
     }
 
     setLoading(true);
@@ -135,15 +140,11 @@ export default function ProjectDetails() {
     }
   }
 
-  if (initialLoading) {
-    return (
-      <h1 className="mt-6 text-2xl text-center md:mt-10 md:text-3xl">
-        Carregando projeto...
-      </h1>
-    );
-  }
-
-  return (
+  return initialLoading ? (
+    <h1 className="mt-6 text-2xl text-center md:mt-10 md:text-3xl">
+      Carregando projeto...
+    </h1>
+  ) : (
     <div className="flex flex-col w-[90%] max-w-[1200px] my-10 mx-auto">
       <div className="flex justify-between items-center mb-5">
         <h1 className="p-3 text-2xl font-bold text-amber-400 bg-black md:text-3xl">

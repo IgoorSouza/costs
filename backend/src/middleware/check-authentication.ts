@@ -21,15 +21,15 @@ export default function checkAuthentication(
 ) {
   try {
     const accessToken = request.headers.authorization?.slice(7);
-    if (!accessToken) throw 401;
+    if (!accessToken) throw new Error("User is not authenticated.");
 
     const { userId } = jwt.verify(accessToken, accessTokenSecret) as JwtPayload;
     request.userId = userId;
 
     done();
-  } catch (error: any) {
-    if (error === 401) {
-      return reply.status(401).send("User is not authenticated.");
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "User is not authenticated.") {
+      return reply.status(401).send(error.message);
     }
 
     if (error instanceof TokenExpiredError) {

@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, PropsWithChildren } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { AxiosError } from "axios";
 import api from "../services/api";
 import { AuthContextObject, AuthData, UserData } from "../utils/interfaces";
 
@@ -32,11 +33,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       await api.post("/users/register", userData);
       toast.success("Conta criada com sucesso!");
       login(userData);
-    } catch (error: any) {
-      if (error.response?.status === 409) {
-        return toast.error(
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response?.status === 409) {
+        toast.error(
           "O email informado já está sendo utilizado por outro usuário."
         );
+        return;
       }
 
       toast.error(
@@ -52,15 +54,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setAuthData(authData);
       api.defaults.headers.common.Authorization = `Bearer ${authData.accessToken}`;
       toast.success("Login realizado com sucesso!");
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        return toast.error(
-          "O email informado não corresponde a nenhum usuário."
-        );
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response?.status === 404) {
+        toast.error("O email informado não corresponde a nenhum usuário.");
+        return;
       }
 
-      if (error.response?.status === 401) {
-        return toast.error("Senha incorreta.");
+      if (error instanceof AxiosError && error.response?.status === 401) {
+        toast.error("Senha incorreta.");
+        return;
       }
 
       toast.error(

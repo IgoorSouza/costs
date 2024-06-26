@@ -7,8 +7,8 @@ import NewProject from "../pages/NewProject";
 import ProjectDetails from "../pages/ProjectDetails";
 import Projects from "../pages/Projects";
 import Register from "../pages/Register";
-import PageNotFound from "./PageNotFound";
-import PrivateRoutes from "./PrivateRoutes";
+import PageNotFound from "../utils/PageNotFound";
+import PrivateRoutes from "../utils/PrivateRoutes";
 
 export default function RoutesComponent() {
   const { authenticating } = useContext(AuthContext);

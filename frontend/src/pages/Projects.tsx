@@ -40,15 +40,11 @@ export default function Projects() {
     }
   }
 
-  if (loading) {
-    return (
-      <h1 className="mt-6 text-2xl text-center md:mt-10 md:text-3xl">
-        Carregando projetos...
-      </h1>
-    );
-  }
-
-  return (
+  return loading ? (
+    <h1 className="mt-6 text-2xl text-center md:mt-10 md:text-3xl">
+      Carregando projetos...
+    </h1>
+  ) : (
     <div className="flex flex-col w-[90%] my-10 mx-auto">
       <div className="flex justify-between items-center w-full mb-8">
         <h1 className="text-2xl font-bold md:text-4xl">Meus Projetos</h1>

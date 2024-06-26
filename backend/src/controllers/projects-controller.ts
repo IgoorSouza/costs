@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import { ZodError } from "zod";
 import {
   createProject,
   getAllProjects,
@@ -30,15 +31,19 @@ export async function create(
 ) {
   try {
     createProjectValidation.parse(request.body);
-
     const { userId } = request;
+
     const project = await createProject({
       ...request.body,
       userId,
     });
 
     reply.status(201).send(project);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return reply.status(400).send(error);
+    }
+
     reply.status(500).send(error);
   }
 }
@@ -49,7 +54,7 @@ export async function getAll(request: FastifyRequest, reply: FastifyReply) {
     const projects = await getAllProjects(userId);
 
     reply.status(200).send(projects);
-  } catch (error: any) {
+  } catch (error: unknown) {
     reply.status(500).send(error);
   }
 }
@@ -63,12 +68,12 @@ export async function getOne(
     const { userId } = request;
     const project = await getProject({ id, userId });
 
-    if (!project) throw 404;
+    if (!project) throw new Error("Project not found.");
 
     reply.status(200).send(project);
-  } catch (error: any) {
-    if (error === 404) {
-      return reply.status(404).send("Project not found.");
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "Project not found") {
+      return reply.status(404).send(error.message);
     }
 
     reply.status(500).send(error);
@@ -81,7 +86,6 @@ export async function update(
 ) {
   try {
     updateProjectValidation.parse(request.body);
-
     const { userId } = request;
 
     const project = await updateProject({
@@ -90,7 +94,11 @@ export async function update(
     });
 
     reply.status(200).send(project);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return reply.status(400).send(error);
+    }
+
     reply.status(500).send(error);
   }
 }
@@ -109,7 +117,7 @@ export async function remove(
     });
 
     reply.status(200).send("Project successfully removed.");
-  } catch (error: any) {
+  } catch (error: unknown) {
     reply.status(500).send(error);
   }
 }

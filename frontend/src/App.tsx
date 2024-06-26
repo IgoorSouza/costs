@@ -2,8 +2,8 @@ import { BrowserRouter as Router } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/authContext";
 import Header from "./components/Header";
+import Routes from "./components/Routes";
 import Footer from "./components/Footer";
-import RoutesComponent from "./utils/Routes";
 
 function App() {
   return (
@@ -13,9 +13,10 @@ function App() {
         reverseOrder={true}
         toastOptions={{ duration: 3000 }}
       />
+      
       <AuthProvider>
         <Header />
-        <RoutesComponent />
+        <Routes />
         <Footer />
       </AuthProvider>
     </Router>

@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import { ZodError } from "zod";
 import {
   createService,
   removeService,
@@ -22,7 +23,11 @@ export async function create(
     const service = await createService(request.body);
 
     reply.status(200).send(service);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return reply.status(400).send(error);
+    }
+
     reply.status(500).send(error);
   }
 }
@@ -37,7 +42,7 @@ export async function remove(
     await removeService(id);
 
     reply.status(200).send("Service successfully removed.");
-  } catch (error: any) {
+  } catch (error: unknown) {
     reply.status(500).send(error);
   }
 }

@@ -73,11 +73,11 @@ export async function login(
       .status(200)
       .setCookie("refreshToken", refreshToken, {
         path: "/",
-        sameSite: "strict",
-        secure: true,
+        sameSite: "none",
         domain: process.env.RENDER_EXTERNAL_HOSTNAME ?? undefined,
+        secure: process.env.NODE_ENV === "production" ?? false,
         httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 // 7 days 
+        maxAge: 7 * 24 * 60 * 60, // 7 days
       })
       .send({ name: user.name, accessToken });
   } catch (error: any) {
@@ -97,6 +97,8 @@ export async function refresh(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { refreshToken } = request.cookies;
 
+    console.log("Refresh token: " + refreshToken);
+
     if (!refreshToken) {
       throw 401;
     }
@@ -112,6 +114,7 @@ export async function refresh(request: FastifyRequest, reply: FastifyReply) {
 
     return reply.status(200).send({ name, accessToken });
   } catch (error: any) {
+    console.log(error);
     if (error === 401) {
       return reply.status(401).send("User is not authenticated.");
     }
@@ -126,7 +129,13 @@ export async function refresh(request: FastifyRequest, reply: FastifyReply) {
 
 export async function logout(request: FastifyRequest, reply: FastifyReply) {
   try {
-    reply.clearCookie("refreshToken");
+    reply.clearCookie("refreshToken", {
+      path: "/",
+      sameSite: "none",
+      domain: process.env.RENDER_EXTERNAL_HOSTNAME ?? undefined,
+      secure: process.env.NODE_ENV === "production" ?? false,
+      httpOnly: true,
+    });
     return reply.status(200).send("Successfully logged out.");
   } catch (error: any) {
     reply.status(500).send(error);

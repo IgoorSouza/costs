@@ -140,7 +140,18 @@ export async function refresh(request: FastifyRequest, reply: FastifyReply) {
 
 export async function logout(request: FastifyRequest, reply: FastifyReply) {
   try {
-    reply.clearCookie("refreshToken", { path: "/" });
+    reply.clearCookie(
+      "refreshToken",
+      process.env.NODE_ENV === "production"
+        ? {
+            path: "/",
+            domain: process.env.RENDER_EXTERNAL_HOSTNAME,
+            sameSite: "none",
+            secure: true,
+            httpOnly: true,
+          }
+        : { path: "/" }
+    );
     return reply.status(200).send("Successfully logged out.");
   } catch (error: unknown) {
     reply.status(500).send(error);

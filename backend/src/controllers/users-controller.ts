@@ -97,8 +97,6 @@ export async function refresh(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { refreshToken } = request.cookies;
 
-    console.log("Refresh token: " + refreshToken);
-
     if (!refreshToken) {
       throw 401;
     }
@@ -114,7 +112,6 @@ export async function refresh(request: FastifyRequest, reply: FastifyReply) {
 
     return reply.status(200).send({ name, accessToken });
   } catch (error: any) {
-    console.log(error);
     if (error === 401) {
       return reply.status(401).send("User is not authenticated.");
     }

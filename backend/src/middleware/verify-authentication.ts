@@ -14,7 +14,7 @@ declare module "fastify" {
 
 const accessTokenSecret: Secret = process.env.ACCESS_TOKEN_SECRET || "";
 
-export default function checkAuthentication(
+export default function verifyAuthentication(
   request: FastifyRequest,
   reply: FastifyReply,
   done: () => void
@@ -28,7 +28,10 @@ export default function checkAuthentication(
 
     done();
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "User is not authenticated.") {
+    if (
+      error instanceof Error &&
+      error.message === "User is not authenticated."
+    ) {
       return reply.status(401).send(error.message);
     }
 

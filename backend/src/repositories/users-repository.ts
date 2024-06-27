@@ -1,10 +1,5 @@
 import prisma from "../services/prisma";
-
-interface UserData {
-  name: string;
-  email: string;
-  password: string;
-}
+import { Register as UserData } from "../interfaces/users";
 
 export async function createUser(userData: UserData) {
   return await prisma.user.create({
@@ -13,7 +8,7 @@ export async function createUser(userData: UserData) {
 }
 
 export async function getUser(userEmail: string) {
-  return await prisma.user.findUnique({
+  return await prisma.user.findUniqueOrThrow({
     where: {
       email: userEmail,
     },

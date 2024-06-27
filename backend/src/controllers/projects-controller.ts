@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { ZodError } from "zod";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import {
   createProject,
   getAllProjects,
@@ -8,49 +8,14 @@ import {
   updateProject,
 } from "../repositories/projects-repository";
 import {
-  createProjectValidation,
-  updateProjectValidation,
-} from "../validation/projects";
-
-interface RequestBody {
-  id: string;
-  name?: string;
-  budget?: number;
-  category?: string;
-}
-
-interface CreateProjectRequestBody {
-  name: string;
-  budget: number;
-  category: string;
-}
-
-export async function create(
-  request: FastifyRequest<{ Body: CreateProjectRequestBody }>,
-  reply: FastifyReply
-) {
-  try {
-    createProjectValidation.parse(request.body);
-    const { userId } = request;
-
-    const project = await createProject({
-      ...request.body,
-      userId,
-    });
-
-    reply.status(201).send(project);
-  } catch (error: unknown) {
-    if (error instanceof ZodError) {
-      return reply.status(400).send(error);
-    }
-
-    reply.status(500).send(error);
-  }
-}
+  CreateProject as CreateProjectRequestBody,
+  UpdateProject as UpdateProjectRequestBody,
+} from "../interfaces/projects";
 
 export async function getAll(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { userId } = request;
+
     const projects = await getAllProjects(userId);
 
     reply.status(200).send(projects);
@@ -66,28 +31,49 @@ export async function getOne(
   try {
     const { id } = request.params;
     const { userId } = request;
-    const project = await getProject({ id, userId });
 
-    if (!project) throw new Error("Project not found.");
+    const project = await getProject({ id, userId });
 
     reply.status(200).send(project);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "Project not found") {
-      return reply.status(404).send(error.message);
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return reply.status(404).send("Project does not exist.");
     }
 
     reply.status(500).send(error);
   }
 }
 
-export async function update(
-  request: FastifyRequest<{ Body: RequestBody }>,
+export async function create(
+  request: FastifyRequest<{ Body: CreateProjectRequestBody }>,
   reply: FastifyReply
 ) {
   try {
-    updateProjectValidation.parse(request.body);
     const { userId } = request;
 
+    const project = await createProject({
+      ...request.body,
+      userId,
+    });
+
+    reply.status(201).send(project);
+  } catch (error: unknown) {
+    reply.status(500).send(error);
+  }
+}
+
+export async function update(
+  request: FastifyRequest<{ Body: UpdateProjectRequestBody }>,
+  reply: FastifyReply
+) {
+  try {
+    const { id } = request.body;
+    const { userId } = request;
+
+    await getProject({ id, userId });
     const project = await updateProject({
       ...request.body,
       userId,
@@ -95,8 +81,11 @@ export async function update(
 
     reply.status(200).send(project);
   } catch (error: unknown) {
-    if (error instanceof ZodError) {
-      return reply.status(400).send(error);
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return reply.status(404).send("Project does not exist.");
     }
 
     reply.status(500).send(error);
@@ -111,6 +100,7 @@ export async function remove(
     const { id } = request.params;
     const { userId } = request;
 
+    await getProject({ id, userId });
     await removeProject({
       id,
       userId,
@@ -118,6 +108,13 @@ export async function remove(
 
     reply.status(200).send("Project successfully removed.");
   } catch (error: unknown) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return reply.status(404).send("Project does not exist.");
+    }
+
     reply.status(500).send(error);
   }
 }

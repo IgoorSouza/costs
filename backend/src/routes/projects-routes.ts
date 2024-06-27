@@ -6,14 +6,27 @@ import {
   update,
   remove,
 } from "../controllers/projects-controller";
-import checkAuthentication from "../middleware/check-authentication";
+import verifyAuthentication from "../middleware/verify-authentication";
+import requestBodyValidation from "../middleware/request-body-validation";
+import {
+  createProjectValidation,
+  updateProjectValidation,
+} from "../validation/projects";
 
 export default async function projectsRoutes(server: FastifyInstance) {
   server.decorateRequest("userId", null);
-  server.addHook("preHandler", checkAuthentication);
+  server.addHook("preHandler", verifyAuthentication);
   server.get("/", getAll);
   server.get("/:id", getOne);
-  server.post("/create", create);
-  server.put("/update", update);
+  server.post(
+    "/create",
+    { preValidation: requestBodyValidation(createProjectValidation) },
+    create
+  );
+  server.put(
+    "/update",
+    { preValidation: requestBodyValidation(updateProjectValidation) },
+    update
+  );
   server.delete("/remove/:id", remove);
 }

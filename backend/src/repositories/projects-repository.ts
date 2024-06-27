@@ -1,25 +1,8 @@
 import prisma from "../services/prisma";
-
-interface CreateProject {
-  name: string;
-  budget: number;
-  category: string;
-  userId: string;
-}
-
-interface UpdateProject {
-  id: string;
-  name?: string;
-  budget?: number;
-  category?: string;
-  userId: string;
-}
-
-export async function createProject(project: CreateProject) {
-  return await prisma.project.create({
-    data: project,
-  });
-}
+import {
+  CreateProject as ProjectData,
+  UpdateProject as NewProjectData,
+} from "../interfaces/projects";
 
 export async function getAllProjects(userId: string) {
   return await prisma.project.findMany({
@@ -36,7 +19,7 @@ export async function getProject({
   id: string;
   userId: string;
 }) {
-  return await prisma.project.findUnique({
+  return await prisma.project.findUniqueOrThrow({
     where: {
       id,
       userId,
@@ -51,13 +34,19 @@ export async function getProject({
   });
 }
 
-export async function updateProject(project: UpdateProject) {
+export async function createProject(projectData: ProjectData) {
+  return await prisma.project.create({
+    data: projectData,
+  });
+}
+
+export async function updateProject(newProjectData: NewProjectData) {
   return await prisma.project.update({
     where: {
-      id: project.id,
-      userId: project.userId,
+      id: newProjectData.id,
+      userId: newProjectData.userId,
     },
-    data: project,
+    data: newProjectData,
   });
 }
 

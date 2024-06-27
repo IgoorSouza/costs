@@ -1,10 +1,12 @@
 import prisma from "../services/prisma";
+import { CreateService as ServiceData } from "../interfaces/services";
 
-interface ServiceData {
-  name: string;
-  cost: number;
-  description?: string;
-  projectId: string;
+export async function getService(id: string) {
+  return await prisma.service.findUniqueOrThrow({
+    where: {
+      id,
+    },
+  });
 }
 
 export async function createService(serviceData: ServiceData) {

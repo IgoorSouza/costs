@@ -3,7 +3,20 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import api from "../services/api";
-import { AuthContextObject, AuthData, UserData } from "../utils/interfaces";
+import { UserData } from "../utils/interfaces";
+
+export interface AuthContextObject {
+  authData: AuthData | null;
+  authenticating: boolean;
+  register: (userData: UserData) => void;
+  login: (userData: UserData) => void;
+  logout: () => void;
+}
+
+export interface AuthData {
+  name: string;
+  accessToken: string;
+}
 
 export const AuthContext = createContext({} as AuthContextObject);
 
@@ -18,7 +31,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const response = await api.post("/users/refresh");
         api.defaults.headers.common.Authorization = `Bearer ${response.data.accessToken}`;
         setAuthData(response.data);
-      } catch (error) {
+      } catch (error: unknown) {
         navigate("/");
       } finally {
         setAuthenticating(false);

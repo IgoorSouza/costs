@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
-import ProjectCard from "../components/ProjectCard";
+import Card from "../components/Card";
 import { Project } from "../utils/interfaces";
 
 export default function Projects() {
@@ -15,7 +15,7 @@ export default function Projects() {
         const { data: projects } = await api.get("/projects");
         setProjects(projects);
         setLoading(false);
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error(
           "Ocorreu um erro ao buscar seus projetos. Por favor, reinicie a página e tente novamente."
         );
@@ -33,7 +33,7 @@ export default function Projects() {
         prevProjects.filter((project) => project.id != projectId)
       );
       toast.success("Projeto removido com sucesso!");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error(
         "Ocorreu um erro ao remover o projeto. Por favor, reinicie a página e tente novamente."
       );
@@ -64,7 +64,7 @@ export default function Projects() {
       ) : (
         <div className="flex flex-wrap items-start gap-5">
           {projects?.map((project) => (
-            <ProjectCard
+            <Card
               key={project.id}
               project={project}
               removeProject={removeProject}

@@ -20,7 +20,7 @@ export default function NewProject() {
 
       toast.success("Projeto criado com sucesso!");
       navigate("/projects");
-    } catch (error) {
+    } catch (error: unknown) {
       setLoading(false);
       toast.error(
         "Ocorreu um erro ao criar o projeto. Por favor, reinicie a página e tente novamente."
@@ -44,6 +44,7 @@ export default function NewProject() {
         <input
           type="text"
           id="projectName"
+          maxLength={50}
           required
           disabled={loading}
           placeholder="Insira o nome do projeto"
@@ -68,6 +69,7 @@ export default function NewProject() {
             type="number"
             id="projectBudget"
             min={1}
+            maxLength={10}
             step={0.01}
             required
             disabled={loading}

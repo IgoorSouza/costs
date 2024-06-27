@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import api from "../services/api";
-import ServiceCard from "../components/ServiceCard";
+import Card from "../components/Card";
 import { Project, Service } from "../utils/interfaces";
 
 export default function ProjectDetails() {
@@ -90,7 +90,7 @@ export default function ProjectDetails() {
       setShowEditForm(false);
       setLoading(false);
       toast.success("Projeto editado com sucesso!");
-    } catch (error) {
+    } catch (error: unknown) {
       setLoading(false);
       toast.error(
         "Ocorreu um erro ao atualizar os dados do projeto. Por favor, reinicie a página e tente novamente."
@@ -118,7 +118,7 @@ export default function ProjectDetails() {
       setShowServiceForm(false);
       setLoading(false);
       toast.success("Serviço adicionado com sucesso!");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error(
         "Ocorreu um erro ao adicionar o serviço. Por favor, reinicie a página e tente novamente."
       );
@@ -133,7 +133,7 @@ export default function ProjectDetails() {
         prevServices.filter((service) => service.id != serviceId)
       );
       toast.success("Serviço removido com sucesso.");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error(
         "Ocorreu um erro ao remover o serviço. Por favor, reinicie a página e tente novamente."
       );
@@ -169,6 +169,7 @@ export default function ProjectDetails() {
           <input
             type="text"
             id="serviceName"
+            maxLength={50}
             required
             disabled={loading}
             defaultValue={project.name}
@@ -194,9 +195,10 @@ export default function ProjectDetails() {
             <input
               type="number"
               id="serviceCost"
-              required
+              maxLength={10}
               min={1}
               step={0.01}
+              required
               disabled={loading}
               defaultValue={project.budget}
               placeholder="Insira o novo orçamento do projeto"
@@ -280,6 +282,7 @@ export default function ProjectDetails() {
             <input
               type="text"
               id="serviceName"
+              maxLength={50}
               required
               disabled={loading}
               placeholder="Insira o nome do serviço"
@@ -306,6 +309,7 @@ export default function ProjectDetails() {
                 id="serviceCost"
                 required
                 min={1}
+                maxLength={10}
                 step={0.01}
                 disabled={loading}
                 placeholder="Insira o custo do serviço"
@@ -328,6 +332,7 @@ export default function ProjectDetails() {
             <input
               type="text"
               id="serviceDescription"
+              maxLength={200}
               disabled={loading}
               placeholder="Insira a descrição do serviço"
               className="w-full p-2 mt-2 disabled:opacity-50 disabled:bg-white"
@@ -357,7 +362,7 @@ export default function ProjectDetails() {
       <div className="flex flex-wrap gap-5">
         {services.length > 0 ? (
           services.map((service) => (
-            <ServiceCard
+            <Card
               key={service.id}
               service={service}
               removeService={removeService}

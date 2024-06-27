@@ -13,19 +13,6 @@ export interface Project {
   services: Service[];
 }
 
-export interface AuthContextObject {
-  authData: AuthData | null;
-  authenticating: boolean;
-  register: (userData: UserData) => void;
-  login: (userData: UserData) => void;
-  logout: () => void;
-}
-
-export interface AuthData {
-  name: string;
-  accessToken: string;
-}
-
 export interface UserData {
   name?: string;
   email: string;

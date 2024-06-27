@@ -9,18 +9,16 @@ export default function requestBodyValidation(validation: ZodSchema) {
     request: FastifyRequest<{
       Body: Register | Login | CreateProject | UpdateProject | CreateService;
     }>,
-    reply: FastifyReply,
-    done: () => void
+    reply: FastifyReply
   ) => {
     try {
       await validation.parseAsync(request.body);
-      done();
     } catch (error: unknown) {
       if (error instanceof ZodError) {
         return reply.status(400).send("Validation error: " + error);
       }
 
-      return reply.status(500).send(error);
+      reply.status(500).send(error);
     }
   };
 }

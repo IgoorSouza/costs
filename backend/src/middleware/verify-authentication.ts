@@ -14,10 +14,9 @@ declare module "fastify" {
 
 const accessTokenSecret: Secret = process.env.ACCESS_TOKEN_SECRET || "";
 
-export default function verifyAuthentication(
+export default async function verifyAuthentication(
   request: FastifyRequest,
-  reply: FastifyReply,
-  done: () => void
+  reply: FastifyReply
 ) {
   try {
     const accessToken = request.headers.authorization?.slice(7);
@@ -25,22 +24,20 @@ export default function verifyAuthentication(
 
     const { userId } = jwt.verify(accessToken, accessTokenSecret) as JwtPayload;
     request.userId = userId;
-
-    done();
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.message === "User is not authenticated."
-    ) {
-      return reply.status(401).send(error.message);
-    }
-
     if (error instanceof TokenExpiredError) {
       return reply.status(401).send("Session expired.");
     }
 
     if (error instanceof JsonWebTokenError) {
       return reply.status(401).send("Invalid token.");
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "User is not authenticated."
+    ) {
+      return reply.status(401).send(error.message);
     }
 
     reply.status(500).send(error);
